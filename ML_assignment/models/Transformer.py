@@ -53,7 +53,28 @@ class TransformerTranslator(nn.Module):
         # Initialize the word embeddings before the positional encodings.            #
         # Don’t worry about sine/cosine encodings- use positional encodings.         #
         ##############################################################################
+        # # print(f"{self.word_emb = }, {self.word_emb.shape = }")
+        # # self.pos_emb = torch.zeros(self.max_length, self.hidden_dim)
+        # self.position = torch.arange(max_length).unsqueeze(1)
+
+        # self.positional_encoding = torch.zeros(1, max_length, self.word_embedding_dim)
+
+        # _2i = torch.arange(0, self.word_embedding_dim, step=2).float()
+
+        # # PE(pos, 2i) = sin(pos/10000^(2i/d_model))
+        # self.positional_encoding[0, :, 0::2] = torch.sin(self.position / (10000 ** (_2i / self.word_embedding_dim)))
+
+        # # PE(pos, 2i+1) = cos(pos/10000^(2i/d_model))
+        # self.positional_encoding[0, :, 1::2] = torch.cos(self.position / (10000 ** (_2i / self.word_embedding_dim)))
         
+        self.word_emb = nn.Embedding(input_size, self.word_embedding_dim)
+        positional_encodings = torch.zeros(max_length, hidden_dim)
+        positions = torch.arange(0, max_length).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, hidden_dim, 2).float() * (-np.log(10000.0) / hidden_dim))
+        positional_encodings[:, 0::2] = torch.sin(positions * div_term)
+        positional_encodings[:, 1::2] = torch.cos(positions * div_term)
+        self.positional_encodings =  positional_encodings.unsqueeze(0)
+    
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -136,7 +157,16 @@ class TransformerTranslator(nn.Module):
         # Note: word_to_ix has keys from 0 to self.vocab_size - 1                   #
         # This will take a few lines.                                               #
         #############################################################################
-      
+        # print("word emb shape: ", self.word_emb.shape, "Pos enc: ", self.positional_encoding.shape)
+        batch_size, seq_length = inputs.size()
+        print("INPUT = ", inputs.shape)
+        # print("self.word_emb(input): ", self.word_emb(inputs), "\nself.positional_encoding", self.positional_encodings)
+        embeddings = self.word_emb(inputs)
+        print("after word embeddings: ", embeddings.shape)
+        print("POS emb: ", self.positional_encodings.size(), "\nPOS2 Emb: ", self.positional_encodings[:, :seq_length, :].size())
+        embeddings += self.positional_encodings
+        print("after sumarize embeddings: ", embeddings.shape)
+        print("Shape EMB: ", {embeddings.shape})
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################

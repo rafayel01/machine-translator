@@ -84,7 +84,7 @@ Now lets check your GPU availability and load some sanity checkers. By default y
 """
 
 # Check device availability
-device = 'cpu' # torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("You are using device: %s" % device)
 
 # load checkers
@@ -169,6 +169,7 @@ deterministic_init(rnn)
 out, hidden = rnn.forward(x,h)
 
 if out is not None:
+    print("RNN results")
     print('Close to out: ', expected_out.allclose(out, atol=1e-4))
     print('Close to hidden: ', expected_hidden.allclose(hidden, atol=1e-4))
 else:
@@ -211,6 +212,7 @@ deterministic_init(lstm)
 h_t, c_t = lstm.forward(x)
 
 if h_t is not None:
+    print("LSTM results")
     print('Close to h_t: ', expected_ht.allclose(h_t, atol=1e-4))
     print('Close to c_t; ', expected_ct.allclose(c_t, atol=1e-4))
 else:
@@ -223,7 +225,6 @@ In this section, you will be working on implementing a simple Seq2Seq model. You
 In this section you will be implementing an RNN/LSTM based encoder to model English texts. Please refer to the instructions in *seq2seq/Encoder.py*. Run the following block to check your implementation.
 """
 
-!python -V
 
 from models.seq2seq.Encoder import Encoder
 
@@ -233,59 +234,58 @@ i, n, h = 10, 4, 2
 encoder = Encoder(i, n, h, h)
 x_array = np.random.rand(5,1) * 10
 x = torch.LongTensor(x_array)
-print(f"{x = }")
 out, hidden = encoder.forward(x)
 
 expected_out, expected_hidden = unit_test_values('encoder')
-
+print("Encoder results")
 print('Close to out: ', expected_out.allclose(out, atol=1e-4))
 print('Close to hidden: ', expected_hidden.allclose(hidden, atol=1e-4))
 
 import torch
 import torch.nn as nn
 
-class RNNEncoder(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, model_type="RNN"):
-        super(RNNEncoder, self).__init__()
+# class RNNEncoder(nn.Module):
+#     def __init__(self, input_size, hidden_size, num_layers, model_type="RNN"):
+#         super(RNNEncoder, self).__init__()
 
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.model_type = model_type
+#         self.input_size = input_size
+#         self.hidden_size = hidden_size
+#         self.num_layers = num_layers
+#         self.model_type = model_type
 
-        # Initialize the RNN layer based on the model type
-        if model_type == "RNN":
-            self.rnn = nn.RNN(input_size, hidden_size, num_layers=num_layers, batch_first=True)
-        elif model_type == "LSTM":
-            self.rnn = nn.LSTM(input_size, hidden_size, num_layers=num_layers, batch_first=True)
+#         # Initialize the RNN layer based on the model type
+#         if model_type == "RNN":
+#             self.rnn = nn.RNN(input_size, hidden_size, num_layers=num_layers, batch_first=True)
+#         elif model_type == "LSTM":
+#             self.rnn = nn.LSTM(input_size, hidden_size, num_layers=num_layers, batch_first=True)
 
-    def forward(self, x):
-        # Forward pass through the RNN layer
-        output, hidden = self.rnn(x)
+#     def forward(self, x):
+#         # Forward pass through the RNN layer
+#         output, hidden = self.rnn(x)
 
-        return output, hidden
+#         return output, hidden
 
-# Example usage
-input_size = 10
-hidden_size = 2
-num_layers = 1
-model_type = "RNN"  # or "LSTM"
+# # Example usage
+# input_size = 10
+# hidden_size = 2
+# num_layers = 1
+# model_type = "RNN"  # or "LSTM"
 
-# Initialize the encoder RNN module
-encoder_rnn = RNNEncoder(input_size, hidden_size, num_layers, model_type)
+# # Initialize the encoder RNN module
+# encoder_rnn = RNNEncoder(input_size, hidden_size, num_layers, model_type)
 
-# Generate some dummy input
-batch_size = 32
-sequence_length = 10
-input_tensor = torch.randn(batch_size, sequence_length, input_size)
+# # Generate some dummy input
+# batch_size = 32
+# sequence_length = 10
+# input_tensor = torch.randn(batch_size, sequence_length, input_size)
 
-# Forward pass through the encoder RNN module
-output, hidden = encoder_rnn(input_tensor)
+# # Forward pass through the encoder RNN module
+# output, hidden = encoder_rnn(input_tensor)
 
-# Output shape: (batch_size, sequence_length, hidden_size)
-print("Output shape:", output.shape)
-# Hidden shape: (num_layers, batch_size, hidden_size)
-print("Hidden shape:", hidden[0].shape)  # For RNN, LSTM
+# # Output shape: (batch_size, sequence_length, hidden_size)
+# print("Output shape:", output.shape)
+# # Hidden shape: (num_layers, batch_size, hidden_size)
+# print("Hidden shape:", hidden[0].shape)  # For RNN, LSTM
 
 """## **3.2: Implement the Decoder**
 In this section you will be implementing an RNN/LSTM based decoder to model German texts. Please refer to the instructions in *seq2seq/Decoder.py*. Run the following block to check your implementation.
@@ -296,7 +296,7 @@ from models.seq2seq.Decoder import Decoder
 set_seed_nb()
 i, n, h =  10, 2, 2
 decoder = Decoder(h, n, n, i)
-x_array = np.random.rand(32, 1) * 10
+x_array = np.random.rand(5, 1) * 10
 x = torch.LongTensor(x_array)
 #print(f"{x = }")
 #print(f"{enc_hidden = }, {enc_hidden = }")
@@ -304,38 +304,12 @@ enc_hidden = torch.FloatTensor([[[0.4912, -0.6078],
                                 [0.4912, -0.6078],
                                 [0.4985, -0.6658],
                                 [0.4932, -0.6242],
-                                [0.4880, -0.7841],
-                                [0.4912, -0.6078],
-                                [0.4912, -0.6078],
-                                [0.4985, -0.6658],
-                                [0.4932, -0.6242],
-                                [0.4880, -0.7841],
-                                [0.4912, -0.6078],
-                                [0.4912, -0.6078],
-                                [0.4985, -0.6658],
-                                [0.4932, -0.6242],
-                                [0.4880, -0.7841],
-                                [0.4912, -0.6078],
-                                [0.4912, -0.6078],
-                                [0.4985, -0.6658],
-                                [0.4932, -0.6242],
-                                [0.4880, -0.7841],
-                                [0.4912, -0.6078],
-                                [0.4912, -0.6078],
-                                [0.4985, -0.6658],
-                                [0.4932, -0.6242],
-                                [0.4880, -0.7841],
-                                [0.4912, -0.6078],
-                                [0.4912, -0.6078],
-                                [0.4985, -0.6658],
-                                [0.4932, -0.6242],
-                                [0.4880, -0.7841],
-                                [0.4912, -0.6078],
-                                [0.4912, -0.6078]]]) #np.random.rand(32,2) * 10 # unit_test_values('encoder')
+                                [0.4880, -0.7841]]]) #np.random.rand(32,2) * 10 # unit_test_values('encoder')
 out, hidden = decoder.forward(x,enc_hidden)
 
 expected_out, expected_hidden = unit_test_values('decoder')
-print(f"{hidden = }, {hidden.shape = }")
+# print(f"{hidden = }, {hidden.shape = }")
+print("Decoder results")
 print('Close to out: ', expected_out.allclose(out, atol=1e-4))
 print('Close to hidden: ', expected_hidden.allclose(hidden, atol=1e-4))
 
@@ -343,7 +317,6 @@ print('Close to hidden: ', expected_hidden.allclose(hidden, atol=1e-4))
 In this section you will be implementing the Seq2Seq model that utilizes the Encoder and Decoder you implemented. Please refer to the instructions in *seq2seq/Seq2Seq.py*. Run the following block to check your implementation.
 """
 
-ddd
 
 import torch
 import torch.nn as nn
@@ -360,13 +333,13 @@ rnn = nn.RNN(input_size, hidden_size, num_layers)
 # Initialize the hidden state with the desired batch size
 # Make sure to pass the appropriate device if using GPU
 hidden = torch.zeros(num_layers, batch_size, hidden_size)
-print(f"{hidden = }, {hidden.shape = }")
+# print(f"{hidden = }, {hidden.shape = }")
 # Example input tensor
 input_tensor = torch.randn(1, batch_size, input_size)
 
 # Forward pass
 output, hidden = rnn(input_tensor, hidden)
-print(f"{hidden = }, {hidden.shape = }")
+# print(f"{hidden = }, {hidden.shape = }")
 
 from models.seq2seq.Seq2Seq import Seq2Seq
 
@@ -421,18 +394,19 @@ optimizer = optim.Adam(seq2seq_model.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 
-for epoch_idx in range(EPOCHS):
-    print("-----------------------------------")
-    print("Epoch %d" % (epoch_idx+1))
-    print("-----------------------------------")
+### Seq2seq training ###
+# for epoch_idx in range(EPOCHS):
+#     print("-----------------------------------")
+#     print("Epoch %d" % (epoch_idx+1))
+#     print("-----------------------------------")
 
-    train_loss, avg_train_loss = train(seq2seq_model, train_loader, optimizer, criterion)
-    scheduler.step(train_loss)
+#     train_loss, avg_train_loss = train(seq2seq_model, train_loader, optimizer, criterion)
+#     scheduler.step(train_loss)
 
-    val_loss, avg_val_loss = evaluate(seq2seq_model, valid_loader, criterion)
+#     val_loss, avg_val_loss = evaluate(seq2seq_model, valid_loader, criterion)
 
-    print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
-    print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
+#     print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
+#     print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
 
 """# **4: Train a Transformer**
 
@@ -504,13 +478,15 @@ inputs = train_inxs[0:2]
 inputs = torch.LongTensor(inputs)
 
 model = TransformerTranslator(input_size=len(word_to_ix), output_size=2, device=device, hidden_dim=128, num_heads=2, dim_feedforward=2048, dim_k=96, dim_v=96, dim_q=96, max_length=train_inxs.shape[1])
-
+print("InputS: = ", inputs)
 embeds = model.embed(inputs)
 
 try:
     print("Difference:", torch.sum(torch.pairwise_distance(embeds, d1)).item()) # should be very small (<0.01)
 except:
     print("NOT IMPLEMENTED")
+
+exit()
 
 """## **4.2: Multi-head Self-Attention**
 
@@ -593,7 +569,7 @@ Now you can start training the Transformer translator. We provided you with some
 
 # Hyperparameters
 learning_rate = 1e-3
-EPOCHS = 10
+EPOCHS = 2
 
 # Model
 trans_model = TransformerTranslator(input_size, output_size, device, max_length = MAX_LEN).to(device)
@@ -631,7 +607,7 @@ def translate(model, dataloader):
             target = data.trg.transpose(1,0)
 
             translation = model(source)
-            print(f"{source = }, {target = }, {translation = }")
+            # print(f"{source = }, {target = }, {translation = }")
             return target, translation
 
 # Select Transformer or Seq2Seq model

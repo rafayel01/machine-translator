@@ -16,7 +16,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         self.input_size = input_size
-        print(f"{self.input_size = }")
+        # print(f"{self.input_size = }")
         self.emb_size = emb_size
         self.encoder_hidden_size = encoder_hidden_size
         self.decoder_hidden_size = decoder_hidden_size
