@@ -67,20 +67,20 @@ class TransformerTranslator(nn.Module):
         # # PE(pos, 2i+1) = cos(pos/10000^(2i/d_model))
         # self.positional_encoding[0, :, 1::2] = torch.cos(self.position / (10000 ** (_2i / self.word_embedding_dim)))
         
-        self.word_emb = nn.Embedding(input_size, self.word_embedding_dim)
+        self.word_emb = nn.Embedding(input_size, self.word_embedding_dim).to(device)
         positional_encodings = torch.zeros(max_length, hidden_dim)
         positions = torch.arange(0, max_length).unsqueeze(1)
         #div_term = torch.exp(torch.arange(0, hidden_dim, 2).float() * (-np.log(10000.0) / hidden_dim))
         _2i = torch.arange(0, hidden_dim, step=2).float()
-        print("_2i SHAPE: ", _2i.shape)
-        print("Pos emb shape: ", positional_encodings.shape)
+        # print("_2i SHAPE: ", _2i.shape)
+        # print("Pos emb shape: ", positional_encodings.shape)
         # for i in range(hidden_dim):
         #     if i % 2 == 0:
 
 
         positional_encodings[:, 0::2] = torch.sin(positions / 10000**(_2i / hidden_dim))
         positional_encodings[:, 1::2] = torch.cos(positions / 10000**(_2i / hidden_dim))
-        self.positional_encodings =  positional_encodings.unsqueeze(0)
+        self.positional_encodings =  positional_encodings.unsqueeze(0).to(device)
         # self.positional_encodings = torch.arange(max_length).unsqueeze(1).repeat(1, hidden_dim).float().unsqueeze(0)
 
         ##############################################################################
@@ -94,18 +94,18 @@ class TransformerTranslator(nn.Module):
         ##############################################################################
         
         # Head #1
-        self.k1 = nn.Linear(self.hidden_dim, self.dim_k)
-        self.v1 = nn.Linear(self.hidden_dim, self.dim_v)
-        self.q1 = nn.Linear(self.hidden_dim, self.dim_q)
+        self.k1 = nn.Linear(self.hidden_dim, self.dim_k).to(self.device)
+        self.v1 = nn.Linear(self.hidden_dim, self.dim_v).to(self.device)
+        self.q1 = nn.Linear(self.hidden_dim, self.dim_q).to(self.device)
         
         # Head #2
-        self.k2 = nn.Linear(self.hidden_dim, self.dim_k)
-        self.v2 = nn.Linear(self.hidden_dim, self.dim_v)
-        self.q2 = nn.Linear(self.hidden_dim, self.dim_q)
+        self.k2 = nn.Linear(self.hidden_dim, self.dim_k).to(self.device)
+        self.v2 = nn.Linear(self.hidden_dim, self.dim_v).to(self.device)
+        self.q2 = nn.Linear(self.hidden_dim, self.dim_q).to(self.device)
         
-        self.softmax = nn.Softmax(dim=2)
-        self.attention_head_projection = nn.Linear(self.dim_v * self.num_heads, self.hidden_dim)
-        self.norm_mh = nn.LayerNorm(self.hidden_dim)
+        self.softmax = nn.Softmax(dim=2).to(self.device)
+        self.attention_head_projection = nn.Linear(self.dim_v * self.num_heads, self.hidden_dim).to(self.device)
+        self.norm_mh = nn.LayerNorm(self.hidden_dim).to(self.device)
 
         
         ##############################################################################
@@ -113,9 +113,9 @@ class TransformerTranslator(nn.Module):
         # Deliverable 3: Initialize what you need for the feed-forward layer.        # 
         # Don't forget the layer normalization.                                      #
         ##############################################################################
-        self.ffl_1 = nn.Linear(hidden_dim, dim_feedforward)
-        self.ffl_2 = nn.Linear(dim_feedforward, hidden_dim)
-        self.relu = nn.ReLU()
+        self.ffl_1 = nn.Linear(hidden_dim, dim_feedforward).to(device) 
+        self.ffl_2 = nn.Linear(dim_feedforward, hidden_dim).to(device)
+        self.relu = nn.ReLU().to(device)
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -125,8 +125,8 @@ class TransformerTranslator(nn.Module):
         # TODO:
         # Deliverable 4: Initialize what you need for the final layer (1-2 lines).   #
         ##############################################################################
-        self.final_linear_layer = nn.Linear(hidden_dim, output_size)
-        self.final_softmax = nn.Softmax()
+        self.final_linear_layer = nn.Linear(hidden_dim, output_size).to(device)
+        self.final_softmax = nn.Softmax().to(device)
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -179,10 +179,13 @@ class TransformerTranslator(nn.Module):
         batch_size, seq_length = inputs.size()
         # print("INPUT shape after = ", inputs.shape)
         # print("self.word_emb(input): ", self.word_emb(inputs), "\nself.positional_encoding", self.positional_encodings)
-        scale = torch.sqrt(torch.FloatTensor([inputs.size(0)]))
+        scale = torch.sqrt(torch.FloatTensor([inputs.size(0)])).to(self.device)
+        # print("scale device: ", scale.get_device())
+        # inputs = inputs.to(self.device)
+        # print("input device: ", inputs.get_device())
         embeddings = self.word_emb(inputs) / scale
-        print("Embeddings: ", {embeddings, embeddings.shape})
-        print("Positional emb: ", self.positional_encodings, self.positional_encodings.shape)
+        # print("Embeddings: ", {embeddings, embeddings.shape})
+        # print("Positional emb: ", self.positional_encodings, self.positional_encodings.shape)
         #embeddings = embeddings * self.hidden_dim ** (0.5)
         # print("after word embeddings: ", embeddings.shape)
         # print("POS emb: ", self.positional_encodings.size(), "\nPOS2 Emb: ", self.positional_encodings[:, :seq_length, :].size())
@@ -213,25 +216,25 @@ class TransformerTranslator(nn.Module):
         query_1 = self.q1(inputs)
         key_1 = self.k1(inputs)
         value_1 = self.v1(inputs)
-        print("query 1: ", query_1.shape)
-        print("key 1: ", key_1.shape)
-        print("value 1: ", value_1.shape)
+        # print("query 1: ", query_1.shape)
+        # print("key 1: ", key_1.shape)
+        # print("value 1: ", value_1.shape)
         query_2 = self.q2(inputs)
         key_2 = self.k2(inputs)
         value_2 = self.v2(inputs)
-        print("input shape: ", inputs.shape)
-        print("key 1 shape: ", key_1.shape)
-        print("query_1 shape: ", query_1.shape)
+        # print("input shape: ", inputs.shape)
+        # print("key 1 shape: ", key_1.shape)
+        # print("query_1 shape: ", query_1.shape)
         head_1 = query_1.matmul(key_1.transpose(1, 2)) / self.dim_k ** 0.5
         head_1 = self.softmax(head_1)
-        print("Q * K: ", head_1.shape)
+        # print("Q * K: ", head_1.shape)
         head_1 = head_1.matmul(value_1)
-        print("after matmul V: ", head_1.shape)
+        # print("after matmul V: ", head_1.shape)
         head_2 = query_2.matmul(key_2.transpose(1, 2)) / self.dim_k ** 0.5
         head_2 = self.softmax(head_2)
         head_2 = head_2.matmul(value_2)
-        print("head_1: ", head_1.shape)
-        print("head_2: ", head_2.shape)
+        # print("head_1: ", head_1.shape)
+        # print("head_2: ", head_2.shape)
         outputs = torch.cat((head_1, head_2), dim=-1)
         add = self.attention_head_projection(outputs) + inputs
         outputs = self.norm_mh(add)
@@ -254,8 +257,9 @@ class TransformerTranslator(nn.Module):
         # initialized them.                                                         #
         # This should not take more than 3-5 lines of code.                         #
         #############################################################################
-        outputs = None
-        outputs = self.ffl_2(self.relu(self.ffl_1(inputs)))
+        ffn = self.ffl_2(self.relu(self.ffl_1(inputs)))
+        add = ffn + inputs
+        outputs = self.norm_mh(add)
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################

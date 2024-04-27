@@ -455,10 +455,10 @@ print(val_inxs.shape) # 1551 validation instances, of (maximum/padded) length 43
 print(train_labels.shape)
 print(val_labels.shape)
 
-d1 = torch.load('./data/d1.pt')
-d2 = torch.load('./data/d2.pt')
-d3 = torch.load('./data/d3.pt')
-d4 = torch.load('./data/d4.pt')
+d1 = torch.load('./data/d1.pt').to(device)
+d2 = torch.load('./data/d2.pt').to(device)
+d3 = torch.load('./data/d3.pt').to(device)
+d4 = torch.load('./data/d4.pt').to(device)
 
 """Instead of using numpy for this model, we will be using Pytorch to implement the forward pass. You will not need to implement the backward pass for the various layers in this assigment.
 
@@ -474,17 +474,18 @@ Image(filename="imgs/embedding.png")
 """Your first task is to implement the embedding lookup, including the addition of positional encodings. Open the file `Transformer.py` and complete all code parts for `Deliverable 1`."""
 from models.Transformer import TransformerTranslator
 inputs = train_inxs[0:2]
-inputs = torch.LongTensor(inputs)
+inputs = torch.LongTensor(inputs).to(device)
 
 model = TransformerTranslator(input_size=len(word_to_ix), output_size=2, device=device, hidden_dim=128, num_heads=2, dim_feedforward=2048, dim_k=96, dim_v=96, dim_q=96, max_length=train_inxs.shape[1])
-print("InputS: = ", inputs)
+# print("InputS: = ", inputs)
 embeds = model.embed(inputs)
-print("d1: ", d1.shape)
-print("embeds: ", embeds.shape)
-try:
-    print("Difference:", torch.sum(torch.pairwise_distance(embeds, d1)).item()) # should be very small (<0.01)
-except:
-    print("NOT IMPLEMENTED")
+# print("d1: ", d1.shape)
+# print("embeds: ", embeds.shape)
+
+# try:
+print("Difference:", torch.sum(torch.pairwise_distance(embeds, d1)).item()) # should be very small (<0.01)
+# except:
+#     print("NOT IMPLEMENTED")
 
 
 """## **4.2: Multi-head Self-Attention**
@@ -528,9 +529,10 @@ Open the file `models/transformer.py` and complete code for `Deliverable 3`: the
 
 Image(filename="imgs/ffn.png")
 
-outputs = model.feedforward_layer(d2) # hidden_states, d2
+outputs = model.feedforward_layer(hidden_states) # hidden_states, d2
 
 try:
+    print("FFN")
     print("Difference:", torch.sum(torch.pairwise_distance(outputs, d3)).item()) # should be very small (<0.01)
 except:
     print("NOT IMPLEMENTED")
@@ -557,7 +559,7 @@ Open the file `models/transformer.py` and complete the method `forward`, by putt
 """
 
 inputs = train_inxs[0:2]
-inputs = torch.LongTensor(inputs)
+inputs = torch.LongTensor(inputs).to(device)
 
 outputs = model.forward(inputs)
 
@@ -566,7 +568,6 @@ try:
 except:
     print("NOT IMPLEMENTED")
 
-exit()
 """Great! We've just implemented a Transformer forward pass for translation. One of the big perks of using PyTorch is that with a simple training loop, we can rely on automatic differentation ([autograd](https://pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html)) to do the work of the backward pass for us. This is not required for this assignment, but you can explore this on your own.
 
 ## **4.6: Train the Transformer**
@@ -575,7 +576,7 @@ Now you can start training the Transformer translator. We provided you with some
 
 # Hyperparameters
 learning_rate = 1e-3
-EPOCHS = 2
+EPOCHS = 100
 
 # Model
 trans_model = TransformerTranslator(input_size, output_size, device, max_length = MAX_LEN).to(device)
@@ -583,7 +584,8 @@ trans_model = TransformerTranslator(input_size, output_size, device, max_length 
 # optimizer = optim.Adam(model.parameters(), lr = learning_rate)
 optimizer = torch.optim.Adam(trans_model.parameters(), lr=learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
-criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
+criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX,
+                                label_smoothing = 0.1)
 
 for epoch_idx in range(EPOCHS):
     print("-----------------------------------")
