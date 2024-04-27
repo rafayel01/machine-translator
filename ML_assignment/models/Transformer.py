@@ -70,11 +70,19 @@ class TransformerTranslator(nn.Module):
         self.word_emb = nn.Embedding(input_size, self.word_embedding_dim)
         positional_encodings = torch.zeros(max_length, hidden_dim)
         positions = torch.arange(0, max_length).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, hidden_dim, 2).float() * (-np.log(10000.0) / hidden_dim))
-        positional_encodings[:, 0::2] = torch.sin(positions * div_term)
-        positional_encodings[:, 1::2] = torch.cos(positions * div_term)
+        #div_term = torch.exp(torch.arange(0, hidden_dim, 2).float() * (-np.log(10000.0) / hidden_dim))
+        _2i = torch.arange(0, hidden_dim, step=2).float()
+        print("_2i SHAPE: ", _2i.shape)
+        print("Pos emb shape: ", positional_encodings.shape)
+        # for i in range(hidden_dim):
+        #     if i % 2 == 0:
+
+
+        positional_encodings[:, 0::2] = torch.sin(positions / 10000**(_2i / hidden_dim))
+        positional_encodings[:, 1::2] = torch.cos(positions / 10000**(_2i / hidden_dim))
         self.positional_encodings =  positional_encodings.unsqueeze(0)
-    
+        # self.positional_encodings = torch.arange(max_length).unsqueeze(1).repeat(1, hidden_dim).float().unsqueeze(0)
+
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -158,15 +166,23 @@ class TransformerTranslator(nn.Module):
         # This will take a few lines.                                               #
         #############################################################################
         # print("word emb shape: ", self.word_emb.shape, "Pos enc: ", self.positional_encoding.shape)
+        # print("Input before: ", type(inputs))
+        # print("INPUT shape before = ", inputs.shape)
+        #inputs = inputs * self.hidden_dim ** (0.5)
+        # print("Input after: ", type(inputs))
         batch_size, seq_length = inputs.size()
-        print("INPUT = ", inputs.shape)
+        # print("INPUT shape after = ", inputs.shape)
         # print("self.word_emb(input): ", self.word_emb(inputs), "\nself.positional_encoding", self.positional_encodings)
-        embeddings = self.word_emb(inputs)
-        print("after word embeddings: ", embeddings.shape)
-        print("POS emb: ", self.positional_encodings.size(), "\nPOS2 Emb: ", self.positional_encodings[:, :seq_length, :].size())
+        scale = torch.sqrt(torch.FloatTensor([inputs.size(0)]))
+        embeddings = self.word_emb(inputs) / scale
+        print("Embeddings: ", {embeddings, embeddings.shape})
+        print("Positional emb: ", self.positional_encodings, self.positional_encodings.shape)
+        #embeddings = embeddings * self.hidden_dim ** (0.5)
+        # print("after word embeddings: ", embeddings.shape)
+        # print("POS emb: ", self.positional_encodings.size(), "\nPOS2 Emb: ", self.positional_encodings[:, :seq_length, :].size())
         embeddings += self.positional_encodings
-        print("after sumarize embeddings: ", embeddings.shape)
-        print("Shape EMB: ", {embeddings.shape})
+        # print("after sumarize embeddings: ", embeddings.shape)
+        # print("Shape EMB: ", {embeddings.shape})
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -188,7 +204,31 @@ class TransformerTranslator(nn.Module):
         # Use the provided 'Deliverable 2' layers initialized in the constructor.   #
         #############################################################################
         outputs = None
-        
+        query_1 = self.q1(inputs)
+        key_1 = self.k1(inputs)
+        value_1 = self.v1(inputs)
+        print("query 1: ", query_1.shape)
+        print("key 1: ", key_1.shape)
+        print("value 1: ", value_1.shape)
+        query_2 = self.q2(inputs)
+        key_2 = self.k2(inputs)
+        value_2 = self.v2(inputs)
+        print("input shape: ", inputs.shape)
+        print("key 1 shape: ", key_1.shape)
+        print("query_1 shape: ", query_1.shape)
+        head_1 = query_1.matmul(key_1.transpose(1, 2)) / self.dim_k ** 0.5
+        head_1 = self.softmax(head_1)
+        print("Q * K: ", head_1.shape)
+        head_1 = head_1.matmul(value_1)
+        print("after matmul V: ", head_1.shape)
+        head_2 = query_2.matmul(key_2.transpose(1, 2)) / self.dim_k ** 0.5
+        head_2 = self.softmax(head_2)
+        head_2 = head_2.matmul(value_2)
+        print("head_1: ", head_1.shape)
+        print("head_2: ", head_2.shape)
+        outputs = torch.cat((head_2, head_1), dim=-1)
+        add = self.attention_head_projection(outputs) + inputs
+        outputs = self.norm_mh(add)
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################

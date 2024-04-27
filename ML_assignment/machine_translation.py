@@ -472,7 +472,6 @@ We will format our input embeddings similarly to how they are constructed in [BE
 Image(filename="imgs/embedding.png")
 
 """Your first task is to implement the embedding lookup, including the addition of positional encodings. Open the file `Transformer.py` and complete all code parts for `Deliverable 1`."""
-
 from models.Transformer import TransformerTranslator
 inputs = train_inxs[0:2]
 inputs = torch.LongTensor(inputs)
@@ -480,13 +479,13 @@ inputs = torch.LongTensor(inputs)
 model = TransformerTranslator(input_size=len(word_to_ix), output_size=2, device=device, hidden_dim=128, num_heads=2, dim_feedforward=2048, dim_k=96, dim_v=96, dim_q=96, max_length=train_inxs.shape[1])
 print("InputS: = ", inputs)
 embeds = model.embed(inputs)
-
+print("d1: ", d1.shape)
+print("embeds: ", embeds.shape)
 try:
     print("Difference:", torch.sum(torch.pairwise_distance(embeds, d1)).item()) # should be very small (<0.01)
 except:
     print("NOT IMPLEMENTED")
 
-exit()
 
 """## **4.2: Multi-head Self-Attention**
 
@@ -509,12 +508,15 @@ Image(filename="imgs/layer_norm.png")
 We have already initialized all of the layers you will need in the constructor.
 """
 
-hidden_states = model.multi_head_attention(embeds)
+hidden_states = model.multi_head_attention(d1) # d1, embeds
 
 try:
+    print("d2: ", d2.shape)
     print("Difference:", torch.sum(torch.pairwise_distance(hidden_states, d2)).item()) # should be very small (<0.01)
 except:
     print("NOT IMPLEMENTED")
+
+exit()
 
 """## **4.3: Element-Wise Feed-forward Layer**
 
