@@ -508,7 +508,7 @@ Image(filename="imgs/layer_norm.png")
 We have already initialized all of the layers you will need in the constructor.
 """
 
-hidden_states = model.multi_head_attention(d1) # d1, embeds
+hidden_states = model.multi_head_attention(embeds) # d1, embeds
 
 try:
     print("d2: ", d2.shape)
@@ -516,7 +516,7 @@ try:
 except:
     print("NOT IMPLEMENTED")
 
-exit()
+
 
 """## **4.3: Element-Wise Feed-forward Layer**
 
@@ -528,7 +528,7 @@ Open the file `models/transformer.py` and complete code for `Deliverable 3`: the
 
 Image(filename="imgs/ffn.png")
 
-outputs = model.feedforward_layer(hidden_states)
+outputs = model.feedforward_layer(d2) # hidden_states, d2
 
 try:
     print("Difference:", torch.sum(torch.pairwise_distance(outputs, d3)).item()) # should be very small (<0.01)
@@ -542,10 +542,13 @@ Open the file `models/transformer.py` and complete code for `Deliverable 4`, to 
 
 scores = model.final_layer(outputs)
 
+print("Final layer: ", d4.shape)
 try:
     print("Difference:", torch.sum(torch.pairwise_distance(scores, d4)).item()) # should be very small (<3e-5)
 except:
     print("NOT IMPLEMENTED")
+
+
 
 """## **4.5: Putting it all together**
 
@@ -563,6 +566,7 @@ try:
 except:
     print("NOT IMPLEMENTED")
 
+exit()
 """Great! We've just implemented a Transformer forward pass for translation. One of the big perks of using PyTorch is that with a simple training loop, we can rely on automatic differentation ([autograd](https://pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html)) to do the work of the backward pass for us. This is not required for this assignment, but you can explore this on your own.
 
 ## **4.6: Train the Transformer**
@@ -593,6 +597,8 @@ for epoch_idx in range(EPOCHS):
 
     print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
     print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
+
+exit()
 
 """**Translations**
 

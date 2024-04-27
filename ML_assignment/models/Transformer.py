@@ -113,7 +113,9 @@ class TransformerTranslator(nn.Module):
         # Deliverable 3: Initialize what you need for the feed-forward layer.        # 
         # Don't forget the layer normalization.                                      #
         ##############################################################################
-        
+        self.ffl_1 = nn.Linear(hidden_dim, dim_feedforward)
+        self.ffl_2 = nn.Linear(dim_feedforward, hidden_dim)
+        self.relu = nn.ReLU()
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -123,7 +125,8 @@ class TransformerTranslator(nn.Module):
         # TODO:
         # Deliverable 4: Initialize what you need for the final layer (1-2 lines).   #
         ##############################################################################
-        
+        self.final_linear_layer = nn.Linear(hidden_dim, output_size)
+        self.final_softmax = nn.Softmax()
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -145,7 +148,10 @@ class TransformerTranslator(nn.Module):
         # You will need to use all of the methods you have previously defined above.#
         # You should only be calling TransformerTranslator class methods here.      #
         #############################################################################
-        outputs = None
+        outputs = self.embed(inputs)
+        outputs = self.multi_head_attention(outputs)
+        outputs = self.feedforward_layer(outputs)
+        outputs = self.final_layer(outputs)
         
         ##############################################################################
         #                               END OF YOUR CODE                             #
@@ -226,7 +232,7 @@ class TransformerTranslator(nn.Module):
         head_2 = head_2.matmul(value_2)
         print("head_1: ", head_1.shape)
         print("head_2: ", head_2.shape)
-        outputs = torch.cat((head_2, head_1), dim=-1)
+        outputs = torch.cat((head_1, head_2), dim=-1)
         add = self.attention_head_projection(outputs) + inputs
         outputs = self.norm_mh(add)
         ##############################################################################
@@ -249,7 +255,7 @@ class TransformerTranslator(nn.Module):
         # This should not take more than 3-5 lines of code.                         #
         #############################################################################
         outputs = None
-        
+        outputs = self.ffl_2(self.relu(self.ffl_1(inputs)))
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -267,7 +273,7 @@ class TransformerTranslator(nn.Module):
         # Deliverable 4: Implement the final layer for the Transformer Translator.  #
         # This should only take about 1 line of code.                               #
         #############################################################################
-        outputs = None
+        outputs = self.final_softmax(self.final_linear_layer(inputs))
                 
         ##############################################################################
         #                               END OF YOUR CODE                             #
