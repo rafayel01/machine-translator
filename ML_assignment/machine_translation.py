@@ -476,7 +476,7 @@ from models.Transformer import TransformerTranslator
 inputs = train_inxs[0:2]
 inputs = torch.LongTensor(inputs).to(device)
 
-model = TransformerTranslator(input_size=len(word_to_ix), output_size=2, device=device, hidden_dim=128, num_heads=2, dim_feedforward=2048, dim_k=96, dim_v=96, dim_q=96, max_length=train_inxs.shape[1])
+model = TransformerTranslator(input_size=len(word_to_ix), output_size=2, device=device, hidden_dim=128, num_heads=2, dim_feedforward=2048, dim_k=96, dim_v=96, dim_q=96, max_length=train_inxs.shape[1]).to(device)
 # print("InputS: = ", inputs)
 embeds = model.embed(inputs)
 # print("d1: ", d1.shape)
@@ -559,7 +559,7 @@ Open the file `models/transformer.py` and complete the method `forward`, by putt
 """
 
 inputs = train_inxs[0:2]
-inputs = torch.LongTensor(inputs).to(device)
+inputs = torch.LongTensor(inputs) # .to(device)
 
 outputs = model.forward(inputs)
 
@@ -574,34 +574,62 @@ except:
 Now you can start training the Transformer translator. We provided you with some training code and you can simply run them to see how your translator works. If you implemented everything correctly, you should see some meaningful translation in the output. Compare the results from the Seq2Seq model, which one is better? You can modify the hyperparameters to improve the results. You can also tune the BATCH_SIZE in section 1.2.
 """
 
+# Batch size
+batch_sizes = [32] # 32, 64, 128, 256, 512]
+
 # Hyperparameters
-learning_rate = 1e-3
-EPOCHS = 100
-
+LRS = [1e-4] #, 1e-3 1e-2, , 1e-4, 5e-4, 5e-5, 3e-3 1e-1]
+num_epochs = [10, 20, 50, 100, 200]
+min_loss = np.inf
+model_loss = np.inf
+best_model = {}
 # Model
-trans_model = TransformerTranslator(input_size, output_size, device, max_length = MAX_LEN).to(device)
+for BATCH_SIZE in batch_sizes:
+    for learning_rate in LRS:
+        for EPOCHS in num_epochs:
+            torch.cuda.empty_cache()
+            print("Num Epochs: ", EPOCHS)
+            train_loader, valid_loader, test_loader = BucketIterator.splits(
+                (train_data, valid_data, test_data),
+                batch_size = BATCH_SIZE, device = device)
+            trans_model = TransformerTranslator(input_size, output_size, device, max_length = MAX_LEN).to(device)
 
-# optimizer = optim.Adam(model.parameters(), lr = learning_rate)
-optimizer = torch.optim.Adam(trans_model.parameters(), lr=learning_rate)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
-criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX,
-                                label_smoothing = 0.1)
+            # optimizer = optim.Adam(model.parameters(), lr = learning_rate)
+            optimizer = torch.optim.Adam(trans_model.parameters(), lr=learning_rate)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
+            criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 
-for epoch_idx in range(EPOCHS):
-    print("-----------------------------------")
-    print("Epoch %d" % (epoch_idx+1))
-    print("-----------------------------------")
+            for epoch_idx in range(EPOCHS):
+                # print("-----------------------------------")
+                # print("Epoch %d" % (epoch_idx+1))
+                # print("-----------------------------------")
 
-    train_loss, avg_train_loss = train(trans_model, train_loader, optimizer, criterion)
-    scheduler.step(train_loss)
+                train_loss, avg_train_loss = train(trans_model, train_loader, optimizer, criterion)
+                scheduler.step(train_loss)
 
-    val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
+                val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
+                if avg_val_loss < min_loss:
+                    min_loss = avg_val_loss
+                    best_model["batch_size"] = BATCH_SIZE
+                    best_model["epochs"] = EPOCHS
+                    best_model["lr"] = learning_rate
+            val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
+            if avg_val_loss < model_loss:
+                model_loss = avg_val_loss
+                torch.save({
+                    'model_state_dict': trans_model.state_dict(),
+                    'epoch': EPOCHS,
+                    'lr': learning_rate,
+                    'batch_size': BATCH_SIZE,
+                    'loss': avg_val_loss,
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/trans_" + str(BATCH_SIZE) + "_" + str(learning_rate) + ".pt")
+                # print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
+                # print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
 
-    print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
-    print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
-
-exit()
-
+with open("./Best_models_parameters/transformer_best_parameters_32_1e-2.txt", mode="wt") as f:
+  f.write(f"Best model parameters: {best_model}")
+print("Best model parameters: ", best_model)
 """**Translations**
 
 Run the code below to see some of your translations. Modify to your liking.
@@ -621,20 +649,24 @@ def translate(model, dataloader):
             return target, translation
 
 # Select Transformer or Seq2Seq model
-#model = trans_model
-model = seq2seq_model
+model = trans_model
+model_seq = seq2seq_model
 
+#pytorch_total_params = sum(p.numel() for p in model.parameters())
+#pytorch_total_params_seq = sum(p.numel() for p in model_seq.parameters())
+#print("Transformer param count: ", pytorch_total_params)
+#print("Seq2Seq param count: ", pytorch_total_params_seq)
 #Set model equal to trans_model or seq2seq_model
 target, translation = translate(model, valid_loader)
 
 #Get the english sentences
 raw = np.array([list(map(lambda x: TRG.vocab.itos[x], target[i])) for i in range(target.shape[0])])
 
-raw[0:9]
+print(raw[0:9])
 
 #Get the back translations for comparison
 token_trans = np.argmax(translation.cpu().numpy(), axis = 2)
 translated = np.array([list(map(lambda x: TRG.vocab.itos[x], token_trans[i])) for i in range(token_trans.shape[0])])
-
-translated[0:9]
+print("Translated")
+print(translated[0:9])
 

@@ -67,7 +67,7 @@ class TransformerTranslator(nn.Module):
         # # PE(pos, 2i+1) = cos(pos/10000^(2i/d_model))
         # self.positional_encoding[0, :, 1::2] = torch.cos(self.position / (10000 ** (_2i / self.word_embedding_dim)))
         
-        self.word_emb = nn.Embedding(input_size, self.word_embedding_dim).to(device)
+        self.word_emb = nn.Embedding(input_size, self.word_embedding_dim)
         positional_encodings = torch.zeros(max_length, hidden_dim)
         positions = torch.arange(0, max_length).unsqueeze(1)
         #div_term = torch.exp(torch.arange(0, hidden_dim, 2).float() * (-np.log(10000.0) / hidden_dim))
@@ -94,18 +94,18 @@ class TransformerTranslator(nn.Module):
         ##############################################################################
         
         # Head #1
-        self.k1 = nn.Linear(self.hidden_dim, self.dim_k).to(self.device)
-        self.v1 = nn.Linear(self.hidden_dim, self.dim_v).to(self.device)
-        self.q1 = nn.Linear(self.hidden_dim, self.dim_q).to(self.device)
+        self.k1 = nn.Linear(self.hidden_dim, self.dim_k)
+        self.v1 = nn.Linear(self.hidden_dim, self.dim_v)
+        self.q1 = nn.Linear(self.hidden_dim, self.dim_q)
         
         # Head #2
-        self.k2 = nn.Linear(self.hidden_dim, self.dim_k).to(self.device)
-        self.v2 = nn.Linear(self.hidden_dim, self.dim_v).to(self.device)
-        self.q2 = nn.Linear(self.hidden_dim, self.dim_q).to(self.device)
+        self.k2 = nn.Linear(self.hidden_dim, self.dim_k)
+        self.v2 = nn.Linear(self.hidden_dim, self.dim_v)
+        self.q2 = nn.Linear(self.hidden_dim, self.dim_q)
         
-        self.softmax = nn.Softmax(dim=2).to(self.device)
-        self.attention_head_projection = nn.Linear(self.dim_v * self.num_heads, self.hidden_dim).to(self.device)
-        self.norm_mh = nn.LayerNorm(self.hidden_dim).to(self.device)
+        self.softmax = nn.Softmax(dim=2)
+        self.attention_head_projection = nn.Linear(self.dim_v * self.num_heads, self.hidden_dim)
+        self.norm_mh = nn.LayerNorm(self.hidden_dim)
 
         
         ##############################################################################
@@ -113,9 +113,10 @@ class TransformerTranslator(nn.Module):
         # Deliverable 3: Initialize what you need for the feed-forward layer.        # 
         # Don't forget the layer normalization.                                      #
         ##############################################################################
-        self.ffl_1 = nn.Linear(hidden_dim, dim_feedforward).to(device) 
-        self.ffl_2 = nn.Linear(dim_feedforward, hidden_dim).to(device)
-        self.relu = nn.ReLU().to(device)
+        self.ffl_1 = nn.Linear(hidden_dim, dim_feedforward) 
+        self.ffl_2 = nn.Linear(dim_feedforward, hidden_dim)
+        self.relu = nn.ReLU()
+
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -125,8 +126,8 @@ class TransformerTranslator(nn.Module):
         # TODO:
         # Deliverable 4: Initialize what you need for the final layer (1-2 lines).   #
         ##############################################################################
-        self.final_linear_layer = nn.Linear(hidden_dim, output_size).to(device)
-        self.final_softmax = nn.Softmax().to(device)
+        self.final_linear_layer = nn.Linear(hidden_dim, output_size)
+        self.final_softmax = nn.Softmax()
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -148,6 +149,7 @@ class TransformerTranslator(nn.Module):
         # You will need to use all of the methods you have previously defined above.#
         # You should only be calling TransformerTranslator class methods here.      #
         #############################################################################
+        inputs = inputs.to(self.device)
         outputs = self.embed(inputs)
         outputs = self.multi_head_attention(outputs)
         outputs = self.feedforward_layer(outputs)
@@ -184,6 +186,7 @@ class TransformerTranslator(nn.Module):
         # inputs = inputs.to(self.device)
         # print("input device: ", inputs.get_device())
         embeddings = self.word_emb(inputs) / scale
+        
         # print("Embeddings: ", {embeddings, embeddings.shape})
         # print("Positional emb: ", self.positional_encodings, self.positional_encodings.shape)
         #embeddings = embeddings * self.hidden_dim ** (0.5)
