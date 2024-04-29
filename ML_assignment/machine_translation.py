@@ -578,11 +578,15 @@ Now you can start training the Transformer translator. We provided you with some
 batch_sizes = [32] # 32, 64, 128, 256, 512]
 
 # Hyperparameters
-LRS = [1e-4] #, 1e-3 1e-2, , 1e-4, 5e-4, 5e-5, 3e-3 1e-1]
-num_epochs = [10, 20, 50, 100, 200]
+LRS = [1e-3] #, 1e-3 1e-2, , 1e-4, 5e-4, 5e-5, 3e-3 1e-1]
+num_epochs = [100] #, 20, 50, 100, 200]
 min_loss = np.inf
 model_loss = np.inf
 best_model = {}
+training_loss = []
+training_perp = []
+valid_loss = []
+valid_perp = []
 # Model
 for BATCH_SIZE in batch_sizes:
     for learning_rate in LRS:
@@ -600,9 +604,9 @@ for BATCH_SIZE in batch_sizes:
             criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 
             for epoch_idx in range(EPOCHS):
-                # print("-----------------------------------")
-                # print("Epoch %d" % (epoch_idx+1))
-                # print("-----------------------------------")
+                print("-----------------------------------")
+                print("Epoch %d" % (epoch_idx+1))
+                print("-----------------------------------")
 
                 train_loss, avg_train_loss = train(trans_model, train_loader, optimizer, criterion)
                 scheduler.step(train_loss)
@@ -613,20 +617,41 @@ for BATCH_SIZE in batch_sizes:
                     best_model["batch_size"] = BATCH_SIZE
                     best_model["epochs"] = EPOCHS
                     best_model["lr"] = learning_rate
-            val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
+                val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
+                training_loss.append(avg_train_loss)
+                training_perp.append(np.exp(avg_train_loss))
+                valid_loss.append(avg_val_loss)
+                valid_perp.append(np.exp(avg_val_loss))
+                print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
+                print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
             if avg_val_loss < model_loss:
                 model_loss = avg_val_loss
-                torch.save({
-                    'model_state_dict': trans_model.state_dict(),
-                    'epoch': EPOCHS,
-                    'lr': learning_rate,
-                    'batch_size': BATCH_SIZE,
-                    'loss': avg_val_loss,
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/trans_" + str(BATCH_SIZE) + "_" + str(learning_rate) + ".pt")
+                # torch.save({
+                #     'model_state_dict': trans_model.state_dict(),
+                #     'epoch': EPOCHS,
+                #     'lr': learning_rate,
+                #     'batch_size': BATCH_SIZE,
+                #     'loss': avg_val_loss,
+                #     'optimizer_state_dict': optimizer.state_dict(),
+                #     }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/trans_" + str(BATCH_SIZE) + "_" + str(learning_rate) + ".pt")
                 # print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
                 # print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
 
+import pickle
+
+with open("./Best_models_parameters/transformer_best_plot_tr_loss", mode="wb") as f:
+  pickle.dump(training_loss, f)
+
+with open("./Best_models_parameters/transformer_best_plot_tr_perp", mode="wb") as f:
+  pickle.dump(training_perp, f)
+
+with open("./Best_models_parameters/transformer_best_plot_val_loss", mode="wb") as f:
+  pickle.dump(valid_loss, f)
+
+with open("./Best_models_parameters/transformer_best_plot_val_perp", mode="wb") as f:
+  pickle.dump(valid_perp, f)
+  
+exit()
 with open("./Best_models_parameters/transformer_best_parameters_32_1e-2.txt", mode="wt") as f:
   f.write(f"Best model parameters: {best_model}")
 print("Best model parameters: ", best_model)

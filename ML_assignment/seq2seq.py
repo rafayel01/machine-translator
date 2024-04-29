@@ -411,10 +411,10 @@ seq2seq_model = Seq2Seq(encoder, decoder, device)
 
 
 # Batch size
-batch_sizes = [64] # 64, 128, 256, 512]
+batch_sizes = [64, 128, 256, 512]
 
 # Hyperparameters
-LRS = [1e-3] #, 1e-3, 1e-4, 5e-4, 5e-5, 3e-3 1e-1]
+LRS = [1e-3, 1e-4, 5e-4, 5e-5]
 num_epochs = [20, 50, 100, 200]
 min_loss = np.inf
 model_loss = np.inf
