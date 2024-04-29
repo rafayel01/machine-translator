@@ -375,7 +375,7 @@ decoder_hidden_size = 64
 decoder_dropout = 0.2
 
 learning_rate = 1e-3
-model_type = "LSTM"
+model_type = "RNN"
 
 EPOCHS = 10
 
@@ -414,11 +414,11 @@ seq2seq_model = Seq2Seq(encoder, decoder, device)
 # seq2seq_model.load_state_dict(loaded['model_state_dict'])
 # exit()
 # Batch size
-batch_sizes = [32, 64, 128] #,32, 64, 128, 256, 512]
+batch_sizes = [64] #,32, 64, 128, 256, 512]
 seq2seq_model = Seq2Seq(encoder, decoder, device)
 # Hyperparameters
-LRS = [1e-3,5e-4] # 1e-4, 5e-5]
-num_epochs = [50, 100] # [20, 50, 100, 200]
+LRS = [1e-3] # 1e-4, 5e-5]
+num_epochs = [100] # [20, 50, 100, 200]
 min_loss = np.inf
 model_loss = np.inf
 best_model = {}
@@ -460,32 +460,31 @@ for BATCH_SIZE in batch_sizes:
                 valid_loss.append(avg_val_loss)
                 valid_perp.append(np.exp(avg_val_loss))
             # val_loss, avg_val_loss = evaluate(seq2seq_model, valid_loader, criterion)
-            if avg_val_loss < model_loss:
-                model_loss = avg_val_loss
-                torch.save({
-                    'model_state_dict': seq2seq_model.state_dict(),
-                    'epoch': EPOCHS,
-                    'lr': learning_rate,
-                    'batch_size': BATCH_SIZE,
-                    'loss': avg_val_loss,
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/seq2seq_RNN_" + str(BATCH_SIZE) + "_" + str(learning_rate) + "_" + str(EPOCHS) +".pt")
-                print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
-                print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
+            model_loss = avg_val_loss
+            torch.save({
+                'model_state_dict': seq2seq_model.state_dict(),
+                'epoch': EPOCHS,
+                'lr': learning_rate,
+                'batch_size': BATCH_SIZE,
+                'loss': avg_val_loss,
+                'optimizer_state_dict': optimizer.state_dict(),
+                }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/seq2seq_RNN_" + str(BATCH_SIZE) + "_" + str(learning_rate) + "_" + str(EPOCHS) +".pt")
+            print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
+            print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
 
-# import pickle
+import pickle
 
-# with open("./Best_models_parameters/seq2seq_LSTM_best_plot_tr_loss", mode="wb") as f:
-#   pickle.dump(training_loss, f)
+with open("./Best_models_parameters/seq2seq_RNN_best_plot_tr_loss", mode="wb") as f:
+  pickle.dump(training_loss, f)
 
-# with open("./Best_models_parameters/seq2seq_LSTM_best_plot_tr_perp", mode="wb") as f:
-#   pickle.dump(training_perp, f)
+with open("./Best_models_parameters/seq2seq_RNN_best_plot_tr_perp", mode="wb") as f:
+  pickle.dump(training_perp, f)
 
-# with open("./Best_models_parameters/seq2seq_LSTM_best_plot_val_loss", mode="wb") as f:
-#   pickle.dump(valid_loss, f)
+with open("./Best_models_parameters/seq2seq_RNN_best_plot_val_loss", mode="wb") as f:
+  pickle.dump(valid_loss, f)
 
-# with open("./Best_models_parameters/seq2seq_LSTM_best_plot_val_perp", mode="wb") as f:
-#   pickle.dump(valid_perp, f)
+with open("./Best_models_parameters/seq2seq_RNN_best_plot_val_perp", mode="wb") as f:
+  pickle.dump(valid_perp, f)
   
 # exit()
 # with open("./Best_models_parameters/seq2seq_best_parameters_" + str(BATCH_SIZE) + "_" + str(learning_rate) + ".txt", mode="wt") as f:
