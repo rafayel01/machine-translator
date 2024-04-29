@@ -82,7 +82,7 @@ class TransformerTranslator(nn.Module):
         positional_encodings[:, 1::2] = torch.cos(positions / 10000**(_2i / hidden_dim))
         self.positional_encodings =  positional_encodings.unsqueeze(0).to(device)
         # self.positional_encodings = torch.arange(max_length).unsqueeze(1).repeat(1, hidden_dim).float().unsqueeze(0)
-        self.learnable_positional_embedings = nn.Parameter(torch.randn(max_length, self.word_embedding_dim))
+        #self.learnable_positional_embedings = nn.Parameter(torch.randn(max_length, self.word_embedding_dim))
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################

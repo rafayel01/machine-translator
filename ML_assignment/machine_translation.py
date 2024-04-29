@@ -573,59 +573,61 @@ except:
 ## **4.6: Train the Transformer**
 Now you can start training the Transformer translator. We provided you with some training code and you can simply run them to see how your translator works. If you implemented everything correctly, you should see some meaningful translation in the output. Compare the results from the Seq2Seq model, which one is better? You can modify the hyperparameters to improve the results. You can also tune the BATCH_SIZE in section 1.2.
 """
-
+trans_model = TransformerTranslator(input_size, output_size, device, max_length = MAX_LEN).to(device)
+best_model = torch.load("./Best_models_parameters/trans_32_0.001.pt")
+trans_model.load_state_dict(best_model['model_state_dict'])
 # Batch size
-batch_sizes = [32] # 32, 64, 128, 256, 512]
+# batch_sizes = [32] # 32, 64, 128, 256, 512]
 
-# Hyperparameters
-LRS = [1e-3] #, 1e-3 1e-2, , 1e-4, 5e-4, 5e-5, 3e-3 1e-1]
-num_epochs = [100] #, 20, 50, 100, 200]
-min_loss = np.inf
-model_loss = np.inf
-best_model = {}
-training_loss = []
-training_perp = []
-valid_loss = []
-valid_perp = []
-# Model
-for BATCH_SIZE in batch_sizes:
-    for learning_rate in LRS:
-        for EPOCHS in num_epochs:
-            torch.cuda.empty_cache()
-            print("Num Epochs: ", EPOCHS)
-            train_loader, valid_loader, test_loader = BucketIterator.splits(
-                (train_data, valid_data, test_data),
-                batch_size = BATCH_SIZE, device = device)
-            trans_model = TransformerTranslator(input_size, output_size, device, max_length = MAX_LEN).to(device)
+# # Hyperparameters
+# LRS = [1e-3] #, 1e-3 1e-2, , 1e-4, 5e-4, 5e-5, 3e-3 1e-1]
+# num_epochs = [100] #, 20, 50, 100, 200]
+# min_loss = np.inf
+# model_loss = np.inf
+# best_model = {}
+# training_loss = []
+# training_perp = []
+# valid_loss = []
+# valid_perp = []
+# # Model
+# for BATCH_SIZE in batch_sizes:
+#     for learning_rate in LRS:
+#         for EPOCHS in num_epochs:
+#             torch.cuda.empty_cache()
+#             print("Num Epochs: ", EPOCHS)
+#             train_loader, valid_loader, test_loader = BucketIterator.splits(
+#                 (train_data, valid_data, test_data),
+#                 batch_size = BATCH_SIZE, device = device)
+#             trans_model = TransformerTranslator(input_size, output_size, device, max_length = MAX_LEN).to(device)
 
-            # optimizer = optim.Adam(model.parameters(), lr = learning_rate)
-            optimizer = torch.optim.Adam(trans_model.parameters(), lr=learning_rate)
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
-            criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
+#             # optimizer = optim.Adam(model.parameters(), lr = learning_rate)
+#             optimizer = torch.optim.Adam(trans_model.parameters(), lr=learning_rate)
+#             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
+#             criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 
-            for epoch_idx in range(EPOCHS):
-                print("-----------------------------------")
-                print("Epoch %d" % (epoch_idx+1))
-                print("-----------------------------------")
+#             for epoch_idx in range(EPOCHS):
+#                 print("-----------------------------------")
+#                 print("Epoch %d" % (epoch_idx+1))
+#                 print("-----------------------------------")
 
-                train_loss, avg_train_loss = train(trans_model, train_loader, optimizer, criterion)
-                scheduler.step(train_loss)
+#                 train_loss, avg_train_loss = train(trans_model, train_loader, optimizer, criterion)
+#                 scheduler.step(train_loss)
 
-                val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
-                if avg_val_loss < min_loss:
-                    min_loss = avg_val_loss
-                    best_model["batch_size"] = BATCH_SIZE
-                    best_model["epochs"] = EPOCHS
-                    best_model["lr"] = learning_rate
-                val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
-                training_loss.append(avg_train_loss)
-                training_perp.append(np.exp(avg_train_loss))
-                valid_loss.append(avg_val_loss)
-                valid_perp.append(np.exp(avg_val_loss))
-                print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
-                print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
-            if avg_val_loss < model_loss:
-                model_loss = avg_val_loss
+#                 val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
+#                 if avg_val_loss < min_loss:
+#                     min_loss = avg_val_loss
+#                     best_model["batch_size"] = BATCH_SIZE
+#                     best_model["epochs"] = EPOCHS
+#                     best_model["lr"] = learning_rate
+#                 val_loss, avg_val_loss = evaluate(trans_model, valid_loader, criterion)
+#                 training_loss.append(avg_train_loss)
+#                 training_perp.append(np.exp(avg_train_loss))
+#                 valid_loss.append(avg_val_loss)
+#                 valid_perp.append(np.exp(avg_val_loss))
+#                 print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
+#                 print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
+#             if avg_val_loss < model_loss:
+#                 model_loss = avg_val_loss
                 # torch.save({
                 #     'model_state_dict': trans_model.state_dict(),
                 #     'epoch': EPOCHS,
@@ -637,24 +639,24 @@ for BATCH_SIZE in batch_sizes:
                 # print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
                 # print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
 
-import pickle
+# import pickle
 
-with open("./Best_models_parameters/transformer_best_plot_tr_loss", mode="wb") as f:
-  pickle.dump(training_loss, f)
+# with open("./Best_models_parameters/transformer_best_plot_tr_loss", mode="wb") as f:
+#   pickle.dump(training_loss, f)
 
-with open("./Best_models_parameters/transformer_best_plot_tr_perp", mode="wb") as f:
-  pickle.dump(training_perp, f)
+# with open("./Best_models_parameters/transformer_best_plot_tr_perp", mode="wb") as f:
+#   pickle.dump(training_perp, f)
 
-with open("./Best_models_parameters/transformer_best_plot_val_loss", mode="wb") as f:
-  pickle.dump(valid_loss, f)
+# with open("./Best_models_parameters/transformer_best_plot_val_loss", mode="wb") as f:
+#   pickle.dump(valid_loss, f)
 
-with open("./Best_models_parameters/transformer_best_plot_val_perp", mode="wb") as f:
-  pickle.dump(valid_perp, f)
+# with open("./Best_models_parameters/transformer_best_plot_val_perp", mode="wb") as f:
+#   pickle.dump(valid_perp, f)
   
-exit()
-with open("./Best_models_parameters/transformer_best_parameters_32_1e-2.txt", mode="wt") as f:
-  f.write(f"Best model parameters: {best_model}")
-print("Best model parameters: ", best_model)
+# exit()
+# with open("./Best_models_parameters/transformer_best_parameters_32_1e-2.txt", mode="wt") as f:
+#   f.write(f"Best model parameters: {best_model}")
+# print("Best model parameters: ", best_model)
 """**Translations**
 
 Run the code below to see some of your translations. Modify to your liking.
@@ -675,7 +677,7 @@ def translate(model, dataloader):
 
 # Select Transformer or Seq2Seq model
 model = trans_model
-model_seq = seq2seq_model
+#model_seq = seq2seq_model
 
 #pytorch_total_params = sum(p.numel() for p in model.parameters())
 #pytorch_total_params_seq = sum(p.numel() for p in model_seq.parameters())

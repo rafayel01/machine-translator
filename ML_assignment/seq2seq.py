@@ -409,16 +409,23 @@ seq2seq_model = Seq2Seq(encoder, decoder, device)
 #     print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
 #     print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
 
-
+# loaded = torch.load("./Best_models_parameters/seq2seq_64_0.001.pt")
+# seq2seq_model = Seq2Seq(encoder, decoder, device)
+# seq2seq_model.load_state_dict(loaded['model_state_dict'])
+# exit()
 # Batch size
-batch_sizes = [64, 128, 256, 512]
-
+batch_sizes = [32, 64, 128] #,32, 64, 128, 256, 512]
+seq2seq_model = Seq2Seq(encoder, decoder, device)
 # Hyperparameters
-LRS = [1e-3, 1e-4, 5e-4, 5e-5]
-num_epochs = [20, 50, 100, 200]
+LRS = [1e-3,5e-4] # 1e-4, 5e-5]
+num_epochs = [50, 100] # [20, 50, 100, 200]
 min_loss = np.inf
 model_loss = np.inf
 best_model = {}
+training_loss = []
+training_perp = []
+valid_loss = []
+valid_perp = []
 # Model
 for BATCH_SIZE in batch_sizes:
     for learning_rate in LRS:
@@ -436,7 +443,7 @@ for BATCH_SIZE in batch_sizes:
 
             for epoch_idx in range(EPOCHS):
                 # print("-----------------------------------")
-                # print("Epoch %d" % (epoch_idx+1))
+                print("Epoch %d" % (epoch_idx+1))
                 # print("-----------------------------------")
 
                 train_loss, avg_train_loss = train(seq2seq_model, train_loader, optimizer, criterion)
@@ -448,7 +455,11 @@ for BATCH_SIZE in batch_sizes:
                     best_model["batch_size"] = BATCH_SIZE
                     best_model["epochs"] = EPOCHS
                     best_model["lr"] = learning_rate
-            val_loss, avg_val_loss = evaluate(seq2seq_model, valid_loader, criterion)
+                training_loss.append(avg_train_loss)
+                training_perp.append(np.exp(avg_train_loss))
+                valid_loss.append(avg_val_loss)
+                valid_perp.append(np.exp(avg_val_loss))
+            # val_loss, avg_val_loss = evaluate(seq2seq_model, valid_loader, criterion)
             if avg_val_loss < model_loss:
                 model_loss = avg_val_loss
                 torch.save({
@@ -458,10 +469,61 @@ for BATCH_SIZE in batch_sizes:
                     'batch_size': BATCH_SIZE,
                     'loss': avg_val_loss,
                     'optimizer_state_dict': optimizer.state_dict(),
-                    }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/seq2seq_" + str(BATCH_SIZE) + "_" + str(learning_rate) + ".pt")
-                # print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
-                # print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
+                    }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/seq2seq_RNN_" + str(BATCH_SIZE) + "_" + str(learning_rate) + "_" + str(EPOCHS) +".pt")
+                print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
+                print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
 
-with open("./Best_models_parameters/seq2seq_best_parameters_" + str(BATCH_SIZE) + "_" + str(learning_rate) + ".txt", mode="wt") as f:
-  f.write(f"Best model parameters: {best_model}")
-print("Best model parameters: ", best_model)
+# import pickle
+
+# with open("./Best_models_parameters/seq2seq_LSTM_best_plot_tr_loss", mode="wb") as f:
+#   pickle.dump(training_loss, f)
+
+# with open("./Best_models_parameters/seq2seq_LSTM_best_plot_tr_perp", mode="wb") as f:
+#   pickle.dump(training_perp, f)
+
+# with open("./Best_models_parameters/seq2seq_LSTM_best_plot_val_loss", mode="wb") as f:
+#   pickle.dump(valid_loss, f)
+
+# with open("./Best_models_parameters/seq2seq_LSTM_best_plot_val_perp", mode="wb") as f:
+#   pickle.dump(valid_perp, f)
+  
+# exit()
+# with open("./Best_models_parameters/seq2seq_best_parameters_" + str(BATCH_SIZE) + "_" + str(learning_rate) + ".txt", mode="wt") as f:
+#   f.write(f"Best model parameters: {best_model}")
+# print("Best model parameters: ", best_model)
+
+### Translation part ###
+# def translate(model, dataloader):
+#     model.eval()
+#     with torch.no_grad():
+#         # Get the progress bar
+#         progress_bar = tqdm(dataloader, ascii = True)
+#         for batch_idx, data in enumerate(progress_bar):
+#             source = data.src.transpose(1,0)
+#             target = data.trg.transpose(1,0)
+
+#             translation = model(source)
+#             # print(f"{source = }, {target = }, {translation = }")
+#             return target, translation
+
+# model = seq2seq_model
+# best_model = torch.load("./Best_models_parameters/seq2seq_64_0.001.pt")
+# model.load_state_dict(best_model['model_state_dict'])
+
+# #pytorch_total_params = sum(p.numel() for p in model.parameters())
+# #pytorch_total_params_seq = sum(p.numel() for p in model_seq.parameters())
+# #print("Transformer param count: ", pytorch_total_params)
+# #print("Seq2Seq param count: ", pytorch_total_params_seq)
+# #Set model equal to trans_model or seq2seq_model
+# target, translation = translate(model, valid_loader)
+
+# #Get the english sentences
+# raw = np.array([list(map(lambda x: TRG.vocab.itos[x], target[i])) for i in range(target.shape[0])])
+
+# print(raw[0:9])
+
+# #Get the back translations for comparison
+# token_trans = np.argmax(translation.cpu().numpy(), axis = 2)
+# translated = np.array([list(map(lambda x: TRG.vocab.itos[x], token_trans[i])) for i in range(token_trans.shape[0])])
+# print("Translated")
+# print(translated[0:9])
