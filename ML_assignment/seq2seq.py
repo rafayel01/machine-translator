@@ -84,7 +84,7 @@ Now lets check your GPU availability and load some sanity checkers. By default y
 """
 
 # Check device availability
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = 'cpu' # torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("You are using device: %s" % device)
 
 # load checkers
