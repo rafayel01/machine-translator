@@ -16,7 +16,6 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         self.input_size = input_size
-        # print(f"{self.input_size = }")
         self.emb_size = emb_size
         self.encoder_hidden_size = encoder_hidden_size
         self.decoder_hidden_size = decoder_hidden_size
@@ -49,8 +48,8 @@ class Encoder(nn.Module):
                                            nn.Linear(self.encoder_hidden_size, self.decoder_hidden_size))
 
         self.dropout = nn.Dropout(dropout)
-
         self.tanh = nn.Tanh()
+
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -71,10 +70,9 @@ class Encoder(nn.Module):
         #       recurrent layer                                                     #
         #       Apply tanh activation to the hidden tensor before returning it      #
         #############################################################################
-        # h0 = torch.zeros(1, input.shape[0], self.encoder_hidden_size)
-        # print(f"{input.shape = }, {self.input_size = }, {self.emb_size = }")
-        emb = self.emb_layer(input)
-        output = self.dropout(emb)
+
+        embedings = self.emb_layer(input)
+        output = self.dropout(embedings)
         if self.model_type == "RNN":
             output, hidden = self.recurrent_layer(output)
             hidden = self.tanh(self.linear_layers(hidden))
@@ -85,12 +83,11 @@ class Encoder(nn.Module):
             hidden = (hidden_st, cell_st)
         else:
             raise ValueError("model_type must be RNN or LSTM")
-        # print(f"Encoder: {hidden = }, {hidden.shape = }")
+
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
         # Do not apply any linear layers/Relu for the cell state when model_type is #
         # LSTM before returning it.                                                 #
-        # print(f"Last) {output = },\n {hidden = }")
         return output, hidden
 

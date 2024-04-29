@@ -241,51 +241,6 @@ print("Encoder results")
 print('Close to out: ', expected_out.allclose(out, atol=1e-4))
 print('Close to hidden: ', expected_hidden.allclose(hidden, atol=1e-4))
 
-import torch
-import torch.nn as nn
-
-# class RNNEncoder(nn.Module):
-#     def __init__(self, input_size, hidden_size, num_layers, model_type="RNN"):
-#         super(RNNEncoder, self).__init__()
-
-#         self.input_size = input_size
-#         self.hidden_size = hidden_size
-#         self.num_layers = num_layers
-#         self.model_type = model_type
-
-#         # Initialize the RNN layer based on the model type
-#         if model_type == "RNN":
-#             self.rnn = nn.RNN(input_size, hidden_size, num_layers=num_layers, batch_first=True)
-#         elif model_type == "LSTM":
-#             self.rnn = nn.LSTM(input_size, hidden_size, num_layers=num_layers, batch_first=True)
-
-#     def forward(self, x):
-#         # Forward pass through the RNN layer
-#         output, hidden = self.rnn(x)
-
-#         return output, hidden
-
-# # Example usage
-# input_size = 10
-# hidden_size = 2
-# num_layers = 1
-# model_type = "RNN"  # or "LSTM"
-
-# # Initialize the encoder RNN module
-# encoder_rnn = RNNEncoder(input_size, hidden_size, num_layers, model_type)
-
-# # Generate some dummy input
-# batch_size = 32
-# sequence_length = 10
-# input_tensor = torch.randn(batch_size, sequence_length, input_size)
-
-# # Forward pass through the encoder RNN module
-# output, hidden = encoder_rnn(input_tensor)
-
-# # Output shape: (batch_size, sequence_length, hidden_size)
-# print("Output shape:", output.shape)
-# # Hidden shape: (num_layers, batch_size, hidden_size)
-# print("Hidden shape:", hidden[0].shape)  # For RNN, LSTM
 
 """## **3.2: Implement the Decoder**
 In this section you will be implementing an RNN/LSTM based decoder to model German texts. Please refer to the instructions in *seq2seq/Decoder.py*. Run the following block to check your implementation.
@@ -308,7 +263,6 @@ enc_hidden = torch.FloatTensor([[[0.4912, -0.6078],
 out, hidden = decoder.forward(x,enc_hidden)
 
 expected_out, expected_hidden = unit_test_values('decoder')
-# print(f"{hidden = }, {hidden.shape = }")
 print("Decoder results")
 print('Close to out: ', expected_out.allclose(out, atol=1e-4))
 print('Close to hidden: ', expected_hidden.allclose(hidden, atol=1e-4))
@@ -317,29 +271,6 @@ print('Close to hidden: ', expected_hidden.allclose(hidden, atol=1e-4))
 In this section you will be implementing the Seq2Seq model that utilizes the Encoder and Decoder you implemented. Please refer to the instructions in *seq2seq/Seq2Seq.py*. Run the following block to check your implementation.
 """
 
-
-import torch
-import torch.nn as nn
-
-# Define the parameters
-input_size = 32
-hidden_size = 64
-num_layers = 1
-batch_size = 2  # Change the batch size to 2
-
-# Define the RNN
-rnn = nn.RNN(input_size, hidden_size, num_layers)
-
-# Initialize the hidden state with the desired batch size
-# Make sure to pass the appropriate device if using GPU
-hidden = torch.zeros(num_layers, batch_size, hidden_size)
-# print(f"{hidden = }, {hidden.shape = }")
-# Example input tensor
-input_tensor = torch.randn(1, batch_size, input_size)
-
-# Forward pass
-output, hidden = rnn(input_tensor, hidden)
-# print(f"{hidden = }, {hidden.shape = }")
 
 from models.seq2seq.Seq2Seq import Seq2Seq
 
@@ -390,35 +321,35 @@ encoder = Encoder(input_size, encoder_emb_size, encoder_hidden_size, decoder_hid
 decoder = Decoder(decoder_emb_size, encoder_hidden_size, encoder_hidden_size, output_size, dropout = decoder_dropout, model_type = model_type)
 seq2seq_model = Seq2Seq(encoder, decoder, device)
 
-# optimizer = optim.Adam(seq2seq_model.parameters(), lr = learning_rate)
-# scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
-# criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
+optimizer = optim.Adam(seq2seq_model.parameters(), lr = learning_rate)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
+criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 
-### Seq2seq training ###
-# for epoch_idx in range(EPOCHS):
-#     torch.cuda.empty_cache()
-#     print("-----------------------------------")
-#     print("Epoch %d" % (epoch_idx+1))
-#     print("-----------------------------------")
+## Seq2seq training ###
+for epoch_idx in range(EPOCHS):
+    torch.cuda.empty_cache()
+    print("-----------------------------------")
+    print("Epoch %d" % (epoch_idx+1))
+    print("-----------------------------------")
 
-#     train_loss, avg_train_loss = train(seq2seq_model, train_loader, optimizer, criterion)
-#     scheduler.step(train_loss)
+    train_loss, avg_train_loss = train(seq2seq_model, train_loader, optimizer, criterion)
+    scheduler.step(train_loss)
 
-#     val_loss, avg_val_loss = evaluate(seq2seq_model, valid_loader, criterion)
+    val_loss, avg_val_loss = evaluate(seq2seq_model, valid_loader, criterion)
 
-#     print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
-#     print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
+    print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
+    print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
 
-# loaded = torch.load("./Best_models_parameters/seq2seq_64_0.001.pt")
-# seq2seq_model = Seq2Seq(encoder, decoder, device)
-# seq2seq_model.load_state_dict(loaded['model_state_dict'])
-# exit()
+loaded = torch.load("./Best_models_parameters/seq2seq_64_0.001.pt")
+seq2seq_model = Seq2Seq(encoder, decoder, device)
+seq2seq_model.load_state_dict(loaded['model_state_dict'])
+
 # Batch size
-batch_sizes = [64] #,32, 64, 128, 256, 512]
+batch_sizes = [32, 64, 128, 256, 512]
 seq2seq_model = Seq2Seq(encoder, decoder, device)
 # Hyperparameters
-LRS = [1e-3] # 1e-4, 5e-5]
-num_epochs = [100] # [20, 50, 100, 200]
+LRS = [1e-3, 1e-4, 5e-5]
+num_epochs = [10, 20, 50, 100, 200]
 min_loss = np.inf
 model_loss = np.inf
 best_model = {}
@@ -426,7 +357,6 @@ training_loss = []
 training_perp = []
 valid_loss = []
 valid_perp = []
-# Model
 for BATCH_SIZE in batch_sizes:
     for learning_rate in LRS:
         for EPOCHS in num_epochs:
@@ -459,18 +389,21 @@ for BATCH_SIZE in batch_sizes:
                 training_perp.append(np.exp(avg_train_loss))
                 valid_loss.append(avg_val_loss)
                 valid_perp.append(np.exp(avg_val_loss))
+                print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
+                print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
+
             # val_loss, avg_val_loss = evaluate(seq2seq_model, valid_loader, criterion)
-            model_loss = avg_val_loss
-            torch.save({
-                'model_state_dict': seq2seq_model.state_dict(),
-                'epoch': EPOCHS,
-                'lr': learning_rate,
-                'batch_size': BATCH_SIZE,
-                'loss': avg_val_loss,
-                'optimizer_state_dict': optimizer.state_dict(),
-                }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/seq2seq_RNN_" + str(BATCH_SIZE) + "_" + str(learning_rate) + "_" + str(EPOCHS) +".pt")
-            print("Training Loss: %.4f. Validation Loss: %.4f. " % (avg_train_loss, avg_val_loss))
-            print("Training Perplexity: %.4f. Validation Perplexity: %.4f. " % (np.exp(avg_train_loss), np.exp(avg_val_loss)))
+            if avg_val_loss < model_loss:
+                model_loss = avg_val_loss
+                torch.save({
+                    'model_state_dict': seq2seq_model.state_dict(),
+                    'epoch': EPOCHS,
+                    'lr': learning_rate,
+                    'batch_size': BATCH_SIZE,
+                    'loss': avg_val_loss,
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    }, "/home/rafayel.veziryan/ml-assignment/ML_assignment/Best_models_parameters/seq2seq_RNN_" + str(BATCH_SIZE) + "_" + str(learning_rate) + "_" + str(EPOCHS) +".pt")
+                
 
 import pickle
 
@@ -486,43 +419,32 @@ with open("./Best_models_parameters/seq2seq_RNN_best_plot_val_loss", mode="wb") 
 with open("./Best_models_parameters/seq2seq_RNN_best_plot_val_perp", mode="wb") as f:
   pickle.dump(valid_perp, f)
   
-# exit()
-# with open("./Best_models_parameters/seq2seq_best_parameters_" + str(BATCH_SIZE) + "_" + str(learning_rate) + ".txt", mode="wt") as f:
-#   f.write(f"Best model parameters: {best_model}")
-# print("Best model parameters: ", best_model)
 
 ### Translation part ###
-# def translate(model, dataloader):
-#     model.eval()
-#     with torch.no_grad():
-#         # Get the progress bar
-#         progress_bar = tqdm(dataloader, ascii = True)
-#         for batch_idx, data in enumerate(progress_bar):
-#             source = data.src.transpose(1,0)
-#             target = data.trg.transpose(1,0)
+def translate(model, dataloader):
+    model.eval()
+    with torch.no_grad():
+        # Get the progress bar
+        progress_bar = tqdm(dataloader, ascii = True)
+        for batch_idx, data in enumerate(progress_bar):
+            source = data.src.transpose(1,0)
+            target = data.trg.transpose(1,0)
 
-#             translation = model(source)
-#             # print(f"{source = }, {target = }, {translation = }")
-#             return target, translation
+            translation = model(source)
+            # print(f"{source = }, {target = }, {translation = }")
+            return target, translation
 
-# model = seq2seq_model
-# best_model = torch.load("./Best_models_parameters/seq2seq_64_0.001.pt")
-# model.load_state_dict(best_model['model_state_dict'])
+model = seq2seq_model
 
-# #pytorch_total_params = sum(p.numel() for p in model.parameters())
-# #pytorch_total_params_seq = sum(p.numel() for p in model_seq.parameters())
-# #print("Transformer param count: ", pytorch_total_params)
-# #print("Seq2Seq param count: ", pytorch_total_params_seq)
-# #Set model equal to trans_model or seq2seq_model
-# target, translation = translate(model, valid_loader)
+target, translation = translate(model, valid_loader)
 
-# #Get the english sentences
-# raw = np.array([list(map(lambda x: TRG.vocab.itos[x], target[i])) for i in range(target.shape[0])])
+#Get the english sentences
+raw = np.array([list(map(lambda x: TRG.vocab.itos[x], target[i])) for i in range(target.shape[0])])
 
-# print(raw[0:9])
+print(raw[0:9])
 
-# #Get the back translations for comparison
-# token_trans = np.argmax(translation.cpu().numpy(), axis = 2)
-# translated = np.array([list(map(lambda x: TRG.vocab.itos[x], token_trans[i])) for i in range(token_trans.shape[0])])
-# print("Translated")
-# print(translated[0:9])
+#Get the back translations for comparison
+token_trans = np.argmax(translation.cpu().numpy(), axis = 2)
+translated = np.array([list(map(lambda x: TRG.vocab.itos[x], token_trans[i])) for i in range(token_trans.shape[0])])
+print("Translated")
+print(translated[0:9])

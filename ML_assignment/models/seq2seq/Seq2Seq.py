@@ -55,21 +55,16 @@ class Seq2Seq(nn.Module):
             out_seq_len = source.shape[1]
         batch_size = source.shape[0]
         source = source.to(self.device)
-        sos = source[:, 0].unsqueeze(0)
+        start = source[:, 0].unsqueeze(0)
         outputs = torch.zeros(batch_size, out_seq_len, self.decoder.output_size).to(self.device)
-        # print(f"{source = }, {source.shape = }")
         _, hidden = self.encoder(source)
-        # print(f"{hidden = }, {hidden.shape = }")
-        output, hidden = self.decoder(sos, hidden)
+        output, hidden = self.decoder(start, hidden)
         outputs[:, 0, :] = output.squeeze(1)
-        sos = torch.argmax(output, dim=1).unsqueeze(0)
+        start = torch.argmax(output, dim=1).unsqueeze(0)
         for i in range(1, out_seq_len):
-            output, hidden = self.decoder(sos, hidden)
+            output, hidden = self.decoder(start, hidden)
             outputs[:, i, :] = output.squeeze(1)
 
-            #sos = output
-        # print(f"{outputs = }")
-        # print(f"{self.decoder.output_size = }")
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################

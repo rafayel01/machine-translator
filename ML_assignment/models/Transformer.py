@@ -53,36 +53,18 @@ class TransformerTranslator(nn.Module):
         # Initialize the word embeddings before the positional encodings.            #
         # Don’t worry about sine/cosine encodings- use positional encodings.         #
         ##############################################################################
-        # # print(f"{self.word_emb = }, {self.word_emb.shape = }")
-        # # self.pos_emb = torch.zeros(self.max_length, self.hidden_dim)
-        # self.position = torch.arange(max_length).unsqueeze(1)
-
-        # self.positional_encoding = torch.zeros(1, max_length, self.word_embedding_dim)
-
-        # _2i = torch.arange(0, self.word_embedding_dim, step=2).float()
-
-        # # PE(pos, 2i) = sin(pos/10000^(2i/d_model))
-        # self.positional_encoding[0, :, 0::2] = torch.sin(self.position / (10000 ** (_2i / self.word_embedding_dim)))
-
-        # # PE(pos, 2i+1) = cos(pos/10000^(2i/d_model))
-        # self.positional_encoding[0, :, 1::2] = torch.cos(self.position / (10000 ** (_2i / self.word_embedding_dim)))
         
         self.word_emb = nn.Embedding(input_size, self.word_embedding_dim)
         positional_encodings = torch.zeros(max_length, hidden_dim)
         positions = torch.arange(0, max_length).unsqueeze(1)
-        #div_term = torch.exp(torch.arange(0, hidden_dim, 2).float() * (-np.log(10000.0) / hidden_dim))
-        _2i = torch.arange(0, hidden_dim, step=2).float()
-        # print("_2i SHAPE: ", _2i.shape)
-        # print("Pos emb shape: ", positional_encodings.shape)
-        # for i in range(hidden_dim):
-        #     if i % 2 == 0:
-
-
-        positional_encodings[:, 0::2] = torch.sin(positions / 10000**(_2i / hidden_dim))
-        positional_encodings[:, 1::2] = torch.cos(positions / 10000**(_2i / hidden_dim))
+        even = torch.arange(0, hidden_dim, step=2).float()
+        positional_encodings[:, 0::2] = torch.sin(positions / 10000**(even / hidden_dim))
+        positional_encodings[:, 1::2] = torch.cos(positions / 10000**(even / hidden_dim))
         self.positional_encodings =  positional_encodings.unsqueeze(0).to(device)
-        # self.positional_encodings = torch.arange(max_length).unsqueeze(1).repeat(1, hidden_dim).float().unsqueeze(0)
-        #self.learnable_positional_embedings = nn.Parameter(torch.randn(max_length, self.word_embedding_dim))
+
+        ### For learnable positional encoding ###
+        #self.positional_encodings = nn.Parameter(torch.randn(max_length, self.word_embedding_dim))
+        
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -216,32 +198,21 @@ class TransformerTranslator(nn.Module):
         # Deliverable 2: Implement multi-head self-attention followed by add + norm.#
         # Use the provided 'Deliverable 2' layers initialized in the constructor.   #
         #############################################################################
-        outputs = None
         query_1 = self.q1(inputs)
         key_1 = self.k1(inputs)
         value_1 = self.v1(inputs)
-        # print("query 1: ", query_1.shape)
-        # print("key 1: ", key_1.shape)
-        # print("value 1: ", value_1.shape)
         query_2 = self.q2(inputs)
         key_2 = self.k2(inputs)
         value_2 = self.v2(inputs)
-        # print("input shape: ", inputs.shape)
-        # print("key 1 shape: ", key_1.shape)
-        # print("query_1 shape: ", query_1.shape)
         head_1 = query_1.matmul(key_1.transpose(1, 2)) / self.dim_k ** 0.5
         head_1 = self.softmax(head_1)
-        # print("Q * K: ", head_1.shape)
         head_1 = head_1.matmul(value_1)
-        # print("after matmul V: ", head_1.shape)
         head_2 = query_2.matmul(key_2.transpose(1, 2)) / self.dim_k ** 0.5
         head_2 = self.softmax(head_2)
         head_2 = head_2.matmul(value_2)
-        # print("head_1: ", head_1.shape)
-        # print("head_2: ", head_2.shape)
-        outputs = torch.cat((head_1, head_2), dim=-1)
-        add = self.attention_head_projection(outputs) + inputs
-        outputs = self.norm_mh(add)
+        concat = torch.cat((head_1, head_2), dim=-1)
+        addition = self.attention_head_projection(concat) + inputs
+        outputs = self.norm_mh(addition)
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################
@@ -262,8 +233,8 @@ class TransformerTranslator(nn.Module):
         # This should not take more than 3-5 lines of code.                         #
         #############################################################################
         ffn = self.ffl_2(self.relu(self.ffl_1(inputs)))
-        add = ffn + inputs
-        outputs = self.norm_mh(add)
+        addition_layer = ffn + inputs
+        outputs = self.norm_mh(addition_layer)
         ##############################################################################
         #                               END OF YOUR CODE                             #
         ##############################################################################

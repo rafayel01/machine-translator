@@ -34,23 +34,13 @@ class Decoder(nn.Module):
         #############################################################################
 
         self.emb_layer = nn.Embedding(self.output_size, self.emb_size)
-        # self.lstm = nn.LSTM(self.emb_size, self.decoder_hidden_size)
-        # self.linear = nn.Sequential(nn.Linear(self.decoder_hidden_size, self.output_size),
-        #                             nn.LogSoftmax(dim=1))
-        # self.dropout = nn.Dropout(p=dropout)
-        # print(f"{encoder_hidden_size = }, {decoder_hidden_size = }, {output_size = }")
         if self.model_type == "RNN":
-
             self.recurrent_layer = nn.RNN(emb_size, decoder_hidden_size, batch_first=True)
-
         elif self.model_type == "LSTM":
-
             self.recurrent_layer = nn.LSTM(emb_size, decoder_hidden_size, batch_first=True)
 
         self.linear_layer = nn.Linear(decoder_hidden_size, output_size)
-
         self.logsoftmax = nn.LogSoftmax(dim=-1)
-
         self.dropout = nn.Dropout(dropout)
 
         #############################################################################
@@ -74,17 +64,12 @@ class Decoder(nn.Module):
         #       Apply linear layer and softmax activation to output tensor before   #
         #       returning it.                                                       #
         #############################################################################
-        # print(f"Decoder 1: {input = }, {input.shape = }")
         input = input.reshape(-1, 1)
-        # print(f"Decoder 1: {hidden = }, {hidden.shape = }")
-        # print(f"{self.output_size = }, {self.emb_size = }")
-        emb = self.dropout(self.emb_layer(input))
-        # print(f"Decoder 2: {hidden = }, {hidden.shape = }")
-        output, hidden = self.recurrent_layer(emb, hidden)
+        embedings = self.dropout(self.emb_layer(input))
+        output, hidden = self.recurrent_layer(embedings, hidden)
         output = self.logsoftmax(self.linear_layer(output))
         output = output.squeeze(1)
 
-        # print(f"{output = }, {hidden = }")
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
