@@ -1,2 +1,2 @@
-# ml-assignment
-This repository created for machine translator assignment
+# Machine Translator
+This repository created for implementation of machine translator with seq2seq and transformer models
